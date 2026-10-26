@@ -12,6 +12,12 @@ CREATE TABLE location (
 ) ENGINE=InnoDB;
 
 
+CREATE TABLE developer (
+    developer_name  VARCHAR(150) NOT NULL,   -- normalized by the crawler
+    CONSTRAINT pk_developer PRIMARY KEY (developer_name)
+) ENGINE=InnoDB;
+
+
 CREATE TABLE app_user (
     email       VARCHAR(255) NOT NULL,
     username    VARCHAR(50)  NOT NULL,
@@ -42,7 +48,10 @@ CREATE TABLE development (
     CONSTRAINT uq_development UNIQUE (project_name, area_name),
     CONSTRAINT fk_development_location
         FOREIGN KEY (area_name) REFERENCES location (area_name)
-        ON UPDATE CASCADE ON DELETE RESTRICT
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_development_developer
+        FOREIGN KEY (developer_name) REFERENCES developer (developer_name)
+        ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE INDEX idx_development_developer ON development (developer_name);
@@ -145,6 +154,7 @@ CREATE TABLE user_focuses_location (
 -- ---------------------------------------------------------------------
 SHOW TABLES;
 DESCRIBE location;
+DESCRIBE developer;
 DESCRIBE development;
 DESCRIBE property;
 DESCRIBE property_amenity;
