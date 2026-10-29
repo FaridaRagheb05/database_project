@@ -68,6 +68,11 @@ CREATE TABLE property (
     area_sqm            DECIMAL(10,2) NULL,
     bedrooms            TINYINT UNSIGNED NULL,
     bathrooms           TINYINT UNSIGNED NULL,
+    floor               VARCHAR(20)   NULL,       -- "Ground", "4", ... (added in Milestone II)
+    finishing           VARCHAR(50)   NULL,       -- e.g. تشطيب كامل (added in Milestone II)
+    completion_status   VARCHAR(50)   NULL,       -- under construction / ready (added in Milestone II)
+    garden_roof_sqm     DECIMAL(10,2) NULL,       -- private garden or roof (added in Milestone II)
+    installments_left_years TINYINT UNSIGNED NULL, -- "Instalments remaining" (added in Milestone II)
     payment_method      VARCHAR(50)   NULL,
     contract_year       SMALLINT      NULL,
     delivery_year       SMALLINT      NULL,
@@ -90,6 +95,7 @@ CREATE TABLE property (
         FOREIGN KEY (development_id) REFERENCES development (development_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT chk_property_area     CHECK (area_sqm IS NULL OR area_sqm > 0),
+    CONSTRAINT chk_property_garden   CHECK (garden_roof_sqm IS NULL OR garden_roof_sqm > 0),
     CONSTRAINT chk_property_contract CHECK (contract_year IS NULL OR contract_year BETWEEN 1990 AND 2100),
     CONSTRAINT chk_property_delivery CHECK (delivery_year IS NULL OR delivery_year BETWEEN 1990 AND 2100),
     CONSTRAINT chk_property_commis   CHECK (commission_pct IS NULL OR commission_pct BETWEEN 0 AND 100),
