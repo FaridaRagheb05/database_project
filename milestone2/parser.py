@@ -83,6 +83,7 @@ def name_key(name):
     s = s.translate(str.maketrans("أإآٱةى", "ااااهي", "ـ"))
 
     # Arabic digits become English digits so "ديجويا ٣" and "ديجويا 3" get the same key (MySQL also treats them as equal)
+    # faced an error when I tried to insert a row with an Arabic digit in the primary key because MySQL treats it as equal to the same number in English digits
     s = s.translate(ARABIC_DIGITS)
 
     # Collapse multiple spaces into one and trim the ends

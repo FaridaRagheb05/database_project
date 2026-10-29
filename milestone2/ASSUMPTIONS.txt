@@ -1,0 +1,67 @@
+ASSUMPTIONS AND CHANGES FROM MILESTONE I
+
+
+CHANGES TO THE MILESTONE I SCHEMA
+
+1. New developer table
+In Milestone I, developer_name was a plain attribute of development, since a developer only had one attribute. The site spells the same developer in many ways ("Palm Hills" / "palm hills"), so the crawler cleans these names and stores each developer once. I added a developer (developer_name) table, with a foreign key from development.developer_name (ON DELETE SET NULL), so every development points to one consistently spelled developer.
+
+2. Five new columns in property
+The listing pages show these fields, which I hadn't included in Milestone I. The spec asks to store all the information on the page, so I added them as nullable columns:
+- floor VARCHAR(20): stored as text because the site sometimes uses words ("Ground") instead of numbers
+- finishing VARCHAR(50): e.g. تشطيب كامل (fully finished), نص تشطيب (semi-finished), على الطوب (core and shell)
+- completion_status VARCHAR(50): تحت الإنشاء (under construction) or جاهزة للاستلام (ready to move in)
+- garden_roof_sqm DECIMAL(10,2): size of a private garden or roof, with a new CHECK that it is > 0
+- installments_left_years TINYINT UNSIGNED: years of installments remaining ("Fully paid" is stored as 0)
+
+3. No other changes
+All other tables, keys and constraints are the same as in Milestone I.
+
+
+CRAWLING
+
+- The listing URLs come from the site's sitemap (https://aqarexit.com/sitemap.xml), which lists every listing. The opportunities page only shows about 200 listings without signing in. The site's robots.txt allows crawling listing pages.
+- Requests are spaced 1–2 seconds apart (randomly) to respect Cloudflare's rate limits. If a request fails or is rate-limited, the crawler waits longer before each retry (30s, 60s, 90s, ...) and stops after 4 failed attempts.
+- The crawler saves the raw text of each listing first and parses it in a separate step. This means a parsing bug can be fixed without crawling the site again, and the crawl can be stopped and resumed.
+- Listings that return 404 (removed since the sitemap was generated) are skipped.
+- The crawl collected 8,574 listings.
+
+
+PARSING
+
+Values not shown on the site
+- payment_method isn't shown. It is stored as "Installments" when there is an amount remaining with the developer, and "Cash" when the remaining amount is 0.
+- development.description isn't shown, so it is NULL.
+- title is the page title, e.g. "Bloomfields — شقة 184 m² · 3 BR · المستقبل سيتي · cash EGP 3.4M".
+- scraped_at is the time each page was crawled.
+
+Values taken as the site shows them (not recomputed)
+- down_payment is "Cash required now" and remaining_amount is "Remaining with developer", as assumed in Milestone I.
+- gain_amount is "Your gain vs. current market price". It can be negative.
+- commission_pct is taken from the market-price line. When a listing has no market price, it is taken from the buyer's-fee line instead.
+- type is stored in Arabic as the site shows it (شقة, فيلا, شاليه, ...), even on the English pages.
+- Total price and price per m² are still not stored, as in Milestone I, because they can be computed: total price = down_payment + remaining_amount, and price per m² = total price / area_sqm.
+
+Cleaning
+- Values that would break a CHECK constraint (e.g. a contract year outside 1990–2100, or an area of 0) are treated as typos on the site and stored as NULL.
+- Text longer than its VARCHAR column is cut to fit.
+- Invisible formatting characters (e.g. the right-to-left mark some sellers paste before Arabic text) are removed.
+
+Matching names
+- Locations, developers, development projects and amenities are typed in by sellers, so the same name appears in different spellings. Names that differ only in case, spacing, accents, Arabic letter forms (أ/ا, ة/ه, ى/ي) or Arabic vs English digits (٣/3) count as the same, and the first spelling seen is stored.
+- A name written in English and in Arabic ("Mountain View" / "ماونتن فيو") is stored as two different names, because there's no reliable way to match them automatically.
+- Since sellers type the location freely, some area names are more detailed than others (e.g. "التجمع الخامس" vs a street address in the Fifth Settlement). These are stored as they appear.
+- A development is identified by its project name and area, as in Milestone I.
+- Every crawled listing belongs to a project, so development_id is never NULL in the data, although the schema still allows it.
+
+Not stored
+- "This unit has overdue instalments" appears on some listings but isn't part of the schema.
+
+
+SAMPLE USER DATA
+
+The spec asks for sample data in the user tables:
+- app_user: 60 users with made-up usernames and @example.com emails (a domain reserved for examples to avoid accidentally using a real person's email)
+- user_focuses_location: each user focuses on 1–3 real areas from the crawl.
+- review: each user reviews 0–6 real development projects (at most one review per project, as in Milestone I). Ratings are 1–10, the review text matches the rating, and about 20% of reviews have no text.
+- The random generator uses a fixed seed, so running the script again produces the same data.
