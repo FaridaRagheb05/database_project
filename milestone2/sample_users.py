@@ -1,17 +1,14 @@
-"""Milestone II - Step 3: generate sample data for the user tables
+# Step 3: generate sample data for the user tables
 
-The spec says the user tables should be filled with sample test data
-(only the property tables come from the website)
+# user tables should be filled with sample test data because only the property tables come from the website
 
-What this script does:
-  1. Makes up users, their areas of focus, and their reviews of real development projects
-  2. Writes them to csv/app_user.csv, csv/user_focuses_location.csv and csv/review.csv
+# What this script does:
+#   1. Makes up users, their areas of focus, and their reviews of real development projects
+#   2. Writes them to csv/app_user.csv, csv/user_focuses_location.csv and csv/review.csv
 
-Run it after parser.py, because it picks areas and projects from
-csv/location.csv and csv/development.csv
-
-Usage:  python sample_users.py
-"""
+# Guide:
+# Run after parser.py because it picks areas and projects from csv/location.csv and csv/development.csv -> need to create those first
+# Run using python sample_users.py
 
 import csv # to read and write the CSV files
 import random # to generate random sample data
@@ -25,8 +22,7 @@ NUM_USERS = 60 # how many sample users to create
 MAX_FOCUS_AREAS = 3 # each user focuses on 1-3 areas
 MAX_REVIEWS_PER_USER = 6 # each user reviews 0-6 projects
 
-# A fixed seed makes random give the same "random" data every run
-# so the CSVs don't change each time the script is run
+# A fixed seed so the CSVs don't change each time the script is run
 random.seed(2026)
 
 # Names used to build usernames like "mariam_hassan42"
@@ -36,7 +32,8 @@ FIRST_NAMES = ["ahmed", "mohamed", "omar", "youssef", "karim", "mostafa", "ali",
 LAST_NAMES = ["hassan", "ibrahim", "mahmoud", "ali", "fathy", "kamal", "saeed",
               "nabil", "adel", "samir", "gamal", "ragab", "zaki", "fouad"]
 
-# Review texts, grouped by how good the rating is
+# Review texts grouped by how good the rating is
+# Review texts generated using AI but I made sure they were realistic and not too generic
 REVIEWS = {
     "good": ["Great project, delivered on time and well maintained.",
              "Very good location and the compound is quiet.",
@@ -59,7 +56,7 @@ REVIEWS = {
 # Read csv/<name>.csv and return its rows as a list of dicts
 def read_csv(name):
 
-    # utf-8-sig because parser.py writes the CSVs that way (so Excel shows the Arabic correctly)
+    # utf-8-sig because parser.py writes the CSVs that way so that Excel shows the Arabic correctly
     with open(CSV_DIR / f"{name}.csv", newline="", encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
@@ -85,7 +82,7 @@ def fmt(dt):
 
 
 def main():
-    # Real areas and projects from the crawl, so the foreign keys are valid
+    # Real areas and projects from the crawl so the foreign keys are valid
     areas = [row["area_name"] for row in read_csv("location")]
     development_ids = [row["development_id"] for row in read_csv("development")]
 
@@ -101,7 +98,8 @@ def main():
             if username not in usernames:
                 usernames.add(username)
                 break
-        # example.com is reserved for examples, so these emails can't belong to a real person
+        
+        # i foudn recommended to use example.com because it's reserved for examples so that emails can't belong to a real person
         email = f"{username}@example.com"
         # Users aged roughly 21 to 65
         birthdate = date(random.randint(1961, 2005), random.randint(1, 12), random.randint(1, 28))
@@ -112,26 +110,25 @@ def main():
             "username": username,
             # Has to be one of the ENUM values in the app_user table
             "gender": random.choices(["Male", "Female", "Other"], weights=[48, 48, 4])[0],
-            "birthdate": birthdate.isoformat(), # e.g. 1998-04-17
+            "birthdate": birthdate.isoformat(), # for example 1998-04-17
             "created_at": fmt(created_at),
         })
 
         # Areas of focus
-        # random.sample picks different areas, so there are no duplicate (email, area) pairs
-        # (those would break the primary key)
+        # random.sample picks different areas so there are no duplicate (email, area) pairs (because those would break the primary key)
         for area in random.sample(areas, k=random.randint(1, min(MAX_FOCUS_AREAS, len(areas)))):
             focuses.append({"email": email, "area_name": area})
 
         # Reviews
-        # Different projects per user, since it's one review per user per project
-        # (the UNIQUE (email, development_id) constraint)
+        # Different projects per user since it's one review per user per project
+        # to satisfy the UNIQUE (email, development_id) constraint
         k = random.randint(0, min(MAX_REVIEWS_PER_USER, len(development_ids)))
         for dev_id in random.sample(development_ids, k=k):
             rating = random.randint(1, 10) # CHECK: rating between 1 and 10
-            # Pick a text that matches the rating
+            # Pick a text that matches the rating 
             mood = "good" if rating >= 8 else "ok" if rating >= 5 else "bad"
             reviews.append({
-                "review_id": len(reviews) + 1, # 1, 2, 3, etc
+                "review_id": len(reviews) + 1, # 1, 2, 3, ...
                 "rating": rating,
                 # Some users leave a rating with no text (review_text is NULL)
                 "review_text": random.choice(REVIEWS[mood]) if random.random() < 0.8 else None,
@@ -147,7 +144,5 @@ def main():
     write_csv("review", ["review_id", "rating", "review_text", "posted_at",
                          "development_id", "email"], reviews)
 
-
-# Only run main() when the script is run directly (not when imported)
 if __name__ == "__main__":
     main()

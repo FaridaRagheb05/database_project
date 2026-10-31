@@ -40,6 +40,9 @@ MAX_TRIES = 4
 
 # Identify ourselves as a normal Chrome browser
 # Some sites reject requests that don't look like they come from a browser
+# I started seeing HTTP 403 "Forbidden" errors when I didn't set a User-Agent
+# Because, from what I understood, Cloudflare was blocking requests that didn't look like they came from a real browser
+# As Playwright's default User-Agent makes it look like a bot/automated client, making us targets for rate-limiting
 USER_AGENT = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
 
@@ -69,7 +72,7 @@ def fetch(request, url):
         try:
             # Send the HTTP GET request (give up after 30 seconds)
             resp = request.get(url, timeout=30000)
-            # 404 = page not found: the listing was sold or taken down
+            # 404 = page not found: i assume that the listing was sold or taken down
             if resp.status == 404:
                 return None
             # resp.ok is True for success codes (200-299)
@@ -78,7 +81,7 @@ def fetch(request, url):
             # Any other code (e.g. 429 "too many requests", 403 blocked)
             print(f"  HTTP {resp.status} on {url}")
         except Exception as e:
-            # Network problems or timeouts end up here
+            # for network problems or timeouts
             print(f"  {type(e).__name__} on {url}")
         # Back off before retrying: 30s, then 60s, then 90s, etc
         time.sleep(30 * attempt)
@@ -87,14 +90,13 @@ def fetch(request, url):
 
 # Turn a listing's HTML into its visible text
 # Returns (page title, listing text)
-# The text is cut at the end of the listing, so ads for other units and the contact form are not included
+# The text is cut at the end of the listing so ads for other units and the contact form are not included
 def page_text(page, html):
 
     # Load the HTML into the headless browser tab
-    # JavaScript and network access are turned off so this only lays out the page
     page.set_content(html)
     
-    # inner_text gives the text the way a person would see it on screen, with each field on its own line
+    # inner_text gives the text the way a person would see it on screen with each field on its own line
     # <main> is the page's main content
     text = page.inner_text("main")
 
@@ -102,7 +104,7 @@ def page_text(page, html):
     text = text[text.find("Back to opportunities"):]
 
     # Cut off everything after the listing itself 
-    # The "Similar featured" ads also say "Featured", which would confuse the parser
+    # The "Similar featured" ads also say "Featured" (which i found to have confused the parser)
     for marker in ("Similar featured opportunities", "Want to reserve"):
         text = text.split(marker)[0]   # keep only the part before the marker
     
@@ -111,7 +113,7 @@ def page_text(page, html):
 
 
 def main():
-    # If a number was passed on the command line, only crawl that many
+    # If a number was passed on the command line only crawl that many (i used it for testing purposes)
     limit = int(sys.argv[1]) if len(sys.argv) > 1 else None
     
     # Create the raw/ folder if it doesn't exist yet
@@ -122,12 +124,12 @@ def main():
     with sync_playwright() as p:
         # An HTTP client for downloading pages
         # It's much faster than opening every page in a full browser
-        # The site already sends the listing data in the HTML, so no JavaScript needs to run
+        # The site already sends the listing data in the HTML
         request = p.request.new_context(extra_http_headers={"User-Agent": USER_AGENT})
 
-        # A headless (invisible) Chromium browser, used only to turn HTML into readable text
+        # A headless (invisible) Chromium browser -> used only to turn HTML into readable text
         browser = p.chromium.launch()
-        # Turn off JavaScript as we only need the HTML laid out
+        # Turn off JavaScript as we only need HTML
         context = browser.new_context(java_script_enabled=False)
         # Block every network request from this browser (images, CSS, fonts, ...)
         # All the text we need is already in the HTML
@@ -135,7 +137,8 @@ def main():
         # One browser tab reused for every listing
         page = context.new_page()
 
-        # Get the list of listing ids from the sitemap ([:None] keeps all)
+        # Get the list of listing ids from the sitemap
+        # Keep only the first `limit` ids if a number was given (limit is None otherwise, which keeps all)
         ids = listing_ids(request)[:limit]
        
         # Skip listings that were already saved in an earlier run
@@ -152,7 +155,7 @@ def main():
             # Download it
             html = fetch(request, url)
             if html is None:
-                # The listing is gone; nothing to save
+                # The listing is gone so there's nothing to save
                 missing += 1
             else:
                 # Extract the title and the listing text
@@ -162,11 +165,11 @@ def main():
                     "url": url,
                     "title": title,
                     "text": text,
-                    # Current time, e.g. "2026-10-27T14:03:11"
+                    # Current time e.g. "2026-10-27T14:03:11"
                     "scraped_at": datetime.now().isoformat(timespec="seconds"),
                 }
                 # Write it to raw/<id>.json
-                # ensure_ascii=False keeps the Arabic text readable in the file instead of \u escapes
+                # ensure_ascii = False keeps the Arabic text readable in the file instead of \u escapes (only method that worked for me)
                 (RAW_DIR / f"{listing_id}.json").write_text(
                     json.dumps(record, ensure_ascii=False), encoding="utf-8")
 
@@ -175,6 +178,7 @@ def main():
                 print(f"{n}/{len(todo)} done ({missing} removed from site)")
 
             # Wait a random 1-2 seconds before the next request
+            # Why not fixed wait time? I found that a fixed wait time was still triggering Cloudflare's rate-limiting but a random wait time worked fine
             time.sleep(random.uniform(*DELAY))
 
         # Close the browser and the HTTP client
@@ -182,6 +186,5 @@ def main():
         request.dispose()
 
 
-# Only run main() when the script is run directly (not when imported)
 if __name__ == "__main__":
     main()
