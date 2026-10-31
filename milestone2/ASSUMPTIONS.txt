@@ -14,14 +14,11 @@ The listing pages show these fields, which I hadn't included in Milestone I. The
 - garden_roof_sqm DECIMAL(10,2): size of a private garden or roof, with a new CHECK that it is > 0
 - installments_left_years TINYINT UNSIGNED: years of installments remaining ("Fully paid" is stored as 0)
 
-3. No other changes
-All other tables, keys and constraints are the same as in Milestone I.
-
 
 CRAWLING
 
 - The listing URLs come from the site's sitemap (https://aqarexit.com/sitemap.xml), which lists every listing. The opportunities page only shows about 200 listings without signing in. The site's robots.txt allows crawling listing pages.
-- Requests are spaced 1–2 seconds apart (randomly) to respect Cloudflare's rate limits. If a request fails or is rate-limited, the crawler waits longer before each retry (30s, 60s, 90s, ...) and stops after 4 failed attempts.
+- Requests are spaced 1-2 seconds apart (randomly) to respect Cloudflare's rate limits. If a request fails or is rate-limited, the crawler waits longer before each retry (30s, 60s, 90s, ...) and stops after 4 failed attempts.
 - The crawler saves the raw text of each listing first and parses it in a separate step. This means a parsing bug can be fixed without crawling the site again, and the crawl can be stopped and resumed.
 - Listings that return 404 (removed since the sitemap was generated) are skipped.
 - The crawl collected 8,574 listings.
@@ -43,7 +40,7 @@ Values taken as the site shows them (not recomputed)
 - Total price and price per m² are still not stored, as in Milestone I, because they can be computed: total price = down_payment + remaining_amount, and price per m² = total price / area_sqm.
 
 Cleaning
-- Values that would break a CHECK constraint (e.g. a contract year outside 1990–2100, or an area of 0) are treated as typos on the site and stored as NULL.
+- Values that would break a CHECK constraint (e.g. a contract year outside 1990-2100, or an area of 0) are treated as typos on the site and stored as NULL.
 - Text longer than its VARCHAR column is cut to fit.
 - Invisible formatting characters (e.g. the right-to-left mark some sellers paste before Arabic text) are removed.
 
@@ -62,6 +59,6 @@ SAMPLE USER DATA
 
 The spec asks for sample data in the user tables:
 - app_user: 60 users with made-up usernames and @example.com emails (a domain reserved for examples to avoid accidentally using a real person's email)
-- user_focuses_location: each user focuses on 1–3 real areas from the crawl.
-- review: each user reviews 0–6 real development projects (at most one review per project, as in Milestone I). Ratings are 1–10, the review text matches the rating, and about 20% of reviews have no text.
+- user_focuses_location: each user focuses on 1-3 real areas from the crawl.
+- review: each user reviews 0-6 real development projects (at most one review per project, as in Milestone I). Ratings are 1-10, the review text matches the rating, and about 20% of reviews have no text.
 - The random generator uses a fixed seed, so running the script again produces the same data.
