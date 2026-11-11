@@ -3,3 +3,5 @@ __pycache__/
 milestone2/raw/
 .DS_Store
 milestone2/crawl.log
+.env
+.streamlit/secrets.toml
