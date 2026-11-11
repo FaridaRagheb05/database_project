@@ -2,7 +2,7 @@
 
 # What this file does:
 #   1. Connects to the "properties" database using the settings in DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_SSL_CA
-#   2. Gives the app run_query() for SELECTs and run_change() for INSERTs
+#   2. Gives the app run_query() for SELECTs, run_change() for one INSERT and run_changes() for several INSERTs that belong together
 
 # Not run directly -> app.py imports it
 # With no settings it connects to the local database (handy while building the app before it's moved to Aiven)
@@ -91,6 +91,29 @@ def run_change(sql, params=()):
     except Exception:
         # Undo the half-done change if something went wrong (e.g. the username is already taken)
         # then pass the error on so the page can show it to the user
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+# Runs several INSERT / UPDATE / DELETE statements as one transaction
+# statements is a list of (sql, params) pairs
+# Either all of them are saved or none of them are
+# -> e.g. registering a user inserts into app_user and user_focuses_location, and I don't want a user saved without their focus areas if the second insert fails
+
+def run_changes(statements):
+
+    conn = get_pool().get_connection()
+    try:
+        cursor = conn.cursor()
+        for sql, params in statements:
+            cursor.execute(sql, params)
+        # Commit only once at the end, so the statements are saved together
+        conn.commit()
+        cursor.close()
+    except Exception:
+        # If any statement fails, undo the ones before it too
         conn.rollback()
         raise
     finally:

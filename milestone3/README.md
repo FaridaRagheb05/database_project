@@ -11,9 +11,20 @@ Libraries: Streamlit (web interface), `mysql.connector` (talking to MySQL).
 python3 -m venv .venv
 .venv/bin/pip install -r milestone3/requirements.txt
 
-# start the app, then open the link it prints (http://localhost:8501)
+# load the database settings (see "Hosting on Aiven"), then start the app
+# and open the link it prints (http://localhost:8501)
+source .env
 .venv/bin/streamlit run milestone3/app.py
 ```
+
+## Files
+
+| File | What it does |
+|---|---|
+| `app.py` | The web app: a sidebar menu with one page per feature |
+| `db.py` | Connects to MySQL and runs queries for the app |
+| `ca.pem` | Aiven's CA certificate, used to verify the encrypted connection |
+| `requirements.txt` | The Python libraries the app needs |
 
 ## Connecting to the database
 
@@ -58,4 +69,19 @@ After the import, every table had the same number of rows as its Milestone II CS
 
 ## Features
 
-_To be filled in as each feature is added._
+| Feature | Page | How it works |
+|---|---|---|
+| Register a user | Register a user | Inserts into `app_user` and one row per focus area into `user_focuses_location`, as one transaction (all saved or none). The age is read back from the `v_user` view |
+| Add a new user review on a project | Add a review | Checks the email is registered, then inserts into `review` |
+| View existing reviews of a project | View reviews of a project | Shows the project's developer and area, its review count and average rating (`COUNT` / `AVG` with a `LEFT JOIN`), and its reviews newest first |
+
+The other features are added in the next commits.
+
+## Assumptions
+
+- There is no login or password, because the spec only asks for users to register with their email. To add a review, a user types the email they registered with.
+- At least one area of focus is required when registering, since the spec lists it as part of registration.
+- Age is not typed in. It is worked out from the birthdate by the `v_user` view (as in Milestone I), so it never goes out of date.
+- The rules are enforced by the database, not the app: the `UNIQUE`, `CHECK` and `FOREIGN KEY` constraints from Milestone I reject a taken email or username, an invalid email, a rating outside 1–10, a second review of the same project, or a review from an unregistered email. The app catches these MySQL errors and shows a friendly message.
+- Reviews show the reviewer's username, not their email, so other visitors can't see people's emails.
+- An empty review text is stored as `NULL`, like the sample reviews without text from Milestone II.
