@@ -26,6 +26,7 @@ python3 -m venv .venv
 | `ca.pem` | Aiven's CA certificate, used to verify the encrypted connection |
 | `requirements.txt` | The Python libraries the app needs |
 | `ASSUMPTIONS.txt` | Every assumption made in this milestone (deliverable) |
+| `properties_dump.sql` | Latest dump of the database, taken from Aiven (deliverable) |
 
 ## Connecting to the database
 
@@ -67,6 +68,23 @@ sed -E 's/DEFINER=`[^`]+`@`[^`]+`//' milestone2/properties_dump.sql | \
 `sed` removes `DEFINER=root@localhost` from the `v_user` view. mysqldump records that the view was created by `root@localhost`, but Aiven has no `root` user and does not let `avnadmin` create objects on another user's behalf, so the import would fail. Without it, the view belongs to `avnadmin`. The dump file itself is left unchanged.
 
 After the import, every table had the same number of rows as its Milestone II CSV (e.g. 8,574 properties, 4,551 developments, 31,649 amenity rows).
+
+## Database dump
+
+`properties_dump.sql` is the latest dump, taken from Aiven:
+
+```bash
+source .env
+mysqldump --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" -p --ssl-ca="$DB_SSL_CA" --ssl-mode=VERIFY_CA \
+  --databases properties --routines --triggers --default-character-set=utf8mb4 \
+  --set-gtid-purged=OFF --single-transaction --no-tablespaces > milestone3/properties_dump.sql
+sed -i '' -E 's/DEFINER=`[^`]+`@`[^`]+`//' milestone3/properties_dump.sql
+```
+
+- `--no-tablespaces` is needed because Aiven doesn't give `avnadmin` the permission to read tablespace information.
+- `sed` removes `DEFINER=avnadmin@%` from the `v_user` view, so the dump can be imported on a server that has no `avnadmin` user (e.g. `mysql -u root -p < milestone3/properties_dump.sql`).
+
+To check the dump, it was imported into a temporary database on Aiven: every table had the same row count as the live database and `v_user` worked. The temporary database was then deleted.
 
 ## Features
 
