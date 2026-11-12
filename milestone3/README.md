@@ -11,9 +11,8 @@ Libraries: Streamlit (web interface), `mysql.connector` (talking to MySQL).
 python3 -m venv .venv
 .venv/bin/pip install -r milestone3/requirements.txt
 
-# load the database settings (see "Hosting on Aiven"), then start the app
-# and open the link it prints (http://localhost:8501)
-source .env
+# start the app, then open the link it prints (http://localhost:8501)
+# the database settings are read from .env automatically (see "Hosting on Aiven")
 .venv/bin/streamlit run milestone3/app.py
 ```
 
@@ -29,15 +28,15 @@ source .env
 
 ## Connecting to the database
 
-`db.py` reads the connection settings from environment variables, so the password is never stored in the code:
+`db.py` reads the connection settings from the `.env` file in the project folder, so the password is never stored in the code. Settings that are already environment variables take priority over the file (this is how they are given on a hosting service such as Streamlit Cloud). All five are required. If any is missing, the app shows which one instead of trying to connect.
 
-| Variable | Meaning | Default |
-|---|---|---|
-| `DB_HOST` | Server address | `localhost` |
-| `DB_PORT` | Server port | `3306` |
-| `DB_USER` | MySQL user | `root` |
-| `DB_PASSWORD` | MySQL password | empty |
-| `DB_SSL_CA` | Path to the server's CA certificate (needed for Aiven, which only accepts encrypted connections) | not set |
+| Variable | Meaning |
+|---|---|
+| `DB_HOST` | Server address |
+| `DB_PORT` | Server port |
+| `DB_USER` | MySQL user |
+| `DB_PASSWORD` | MySQL password |
+| `DB_SSL_CA` | Path to the server's CA certificate, relative to the project folder (Aiven only accepts encrypted connections) |
 
 The app keeps a small pool of connections open and reuses them, because Streamlit reruns the script on every click. All values typed into the app are passed to MySQL as `%s` parameters, never pasted into the SQL text, to prevent SQL injection.
 

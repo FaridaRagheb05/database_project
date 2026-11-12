@@ -1,43 +1,90 @@
 # Database connection used by every page of the app
 
 # What this file does:
-#   1. Connects to the "properties" database using the settings in DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_SSL_CA
-#   2. Gives the app run_query() for SELECTs, run_change() for one INSERT and run_changes() for several INSERTs that belong together
+#   1. Reads the database settings from the .env file in the project folder
+#   2. Connects to the "properties" database on Aiven using DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_SSL_CA
+#   3. Gives the app run_query() for SELECTs, run_change() for one INSERT and run_changes() for several INSERTs that belong together
 
 # Not run directly -> app.py imports it
-# With no settings it connects to the local database (handy while building the app before it's moved to Aiven)
 
 import os # to read the DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_SSL_CA settings
+from pathlib import Path # for building file paths
 
 import mysql.connector
 from mysql.connector import pooling # keeps a few connections open so they can be reused
-import streamlit as st # only used here for st.cache_resource
+import streamlit as st # for st.cache_resource and for showing an error if the settings are missing
+
+
+# The project folder (one level up from milestone3/) where .env lives
+PROJECT_DIR = Path(__file__).parent.parent
+ENV_FILE = PROJECT_DIR / ".env"
+
+# The settings the app can't connect without
+REQUIRED = ["DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_SSL_CA"]
 
 
 # Helper functions
+
+# Reads the .env file and puts each setting into the environment variables
+# -> so the app works without running "source .env" first, from any terminal or VS Code's Run button
+# Each line looks like "export DB_HOST=..." (the export is there so "source .env" still works too)
+# A setting that already exists in the environment is not replaced
+# -> e.g. on Streamlit Cloud the settings come from its secrets page instead of a .env file
+
+def load_env_file():
+
+    # No .env file is fine here, the check in connection_settings() explains what's missing
+    if not ENV_FILE.exists():
+        return
+
+    for line in ENV_FILE.read_text().splitlines():
+        line = line.strip()
+        # Skip empty lines and comments
+        if not line or line.startswith("#"):
+            continue
+        # Remove "export " from the start if it's there
+        if line.startswith("export "):
+            line = line[len("export "):]
+        # Split at the first = only, in case the password itself contains an =
+        name, _, value = line.partition("=")
+        # Remove quotes around the value if there are any
+        value = value.strip().strip("'\"")
+        os.environ.setdefault(name.strip(), value) # setdefault only sets it if it isn't already set
+
 
 # Builds the connection settings from the environment variables
 # The password is never written in the code, same as loader.py in Milestone 2
 
 def connection_settings():
 
-    settings = {
-        "host": os.environ.get("DB_HOST", "localhost"),
-        "port": int(os.environ.get("DB_PORT", "3306")), # Aiven uses its own port, not the usual 3306
-        "user": os.environ.get("DB_USER", "root"),
-        "password": os.environ.get("DB_PASSWORD", ""),
+    load_env_file()
+
+    # Stop with a clear message if a setting is missing
+    # -> before this, a missing setting made the app try MySQL on localhost and fail with a confusing "Access denied for user 'root'@'localhost'"
+    missing = [name for name in REQUIRED if not os.environ.get(name)]
+    if missing:
+        st.error(f"Database settings not found: {', '.join(missing)}. "
+                 f"Check that the .env file exists in the project folder ({PROJECT_DIR}) and has these lines.")
+        st.stop() # stops the page here so nothing else tries to use the database
+
+    # DB_SSL_CA is a path like milestone3/ca.pem, relative to the project folder
+    # I join it to the project folder so it's found even when the app is started from a different folder
+    ca_file = Path(os.environ["DB_SSL_CA"])
+    if not ca_file.is_absolute():
+        ca_file = PROJECT_DIR / ca_file
+
+    return {
+        "host": os.environ["DB_HOST"],
+        "port": int(os.environ["DB_PORT"]), # Aiven uses its own port, not the usual 3306
+        "user": os.environ["DB_USER"],
+        "password": os.environ["DB_PASSWORD"],
         "database": "properties",
         "charset": "utf8mb4", # needed for the Arabic text
+        # Aiven only accepts encrypted connections
+        # ssl_ca is Aiven's CA certificate, which lets the app check it is really talking to Aiven's server
+        "ssl_ca": str(ca_file),
+        "ssl_verify_cert": True, # refuse to connect if the server's certificate doesn't match
     }
-
-    # Aiven only accepts encrypted connections
-    # DB_SSL_CA is the path to Aiven's CA certificate, which lets the app check it is really talking to Aiven's server
-    ca_file = os.environ.get("DB_SSL_CA")
-    if ca_file:
-        settings["ssl_ca"] = ca_file
-        settings["ssl_verify_cert"] = True # refuse to connect if the server's certificate doesn't match
-
-    return settings
 
 
 # Opens a small pool of connections once and reuses it for the whole app

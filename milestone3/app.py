@@ -4,8 +4,9 @@
 #   1. Shows a sidebar menu with the 10 features the spec asks for
 #   2. Runs the page that was picked, which reads from or writes to the database through db.py
 
-# Run using: source .env && streamlit run milestone3/app.py
+# Run using: streamlit run milestone3/app.py
 # (then open the link it prints, http://localhost:8501)
+# The database settings are read from .env by db.py
 
 import datetime # for the birthdate limits
 
