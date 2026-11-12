@@ -3,7 +3,7 @@ ASSUMPTIONS FOR MILESTONE III
 
 THE APPLICATION
 
-- The application is a web app built with Streamlit (Python). It runs as a website and talks only to the database hosted on Aiven, never to localhost. My TA confirmed that a website acting as an interface to a cloud-hosted database counts as a web-based app.
+- The application is a web app built with Streamlit (Python). It runs as a website and talks only to the database hosted on Aiven, never to localhost.
 - The app has a sidebar menu with one page for each of the 10 features in the spec, in the same order as the spec.
 - The app is deployed on Streamlit Community Cloud (https://resale-properties.streamlit.app/), so the website itself is also hosted online and anyone can use it without installing anything. This counts as the "executable": the source code is in the repository and the running app is at that link. It can also be run locally with "streamlit run milestone3/app.py".
 - The GitHub repository stays private. Only Streamlit has read access to it, to run the app. The app itself is public, so visitors can use the website but can't see the code.
@@ -13,7 +13,7 @@ THE APPLICATION
 HOSTING THE DATABASE
 
 - The database is hosted on a free Aiven MySQL 8.4 server. I chose Aiven over db4free.net (the example in the spec) because it is more reliable.
-- Aiven only accepts encrypted connections. The app checks the server against Aiven's CA certificate (ca.pem). The certificate is public, since it only proves the server is really Aiven's, so it is included with the code. The password is not: it is kept in a .env file that is never committed.
+- Aiven only accepts encrypted connections. The app checks the server against Aiven's CA certificate (ca.pem). The certificate is public, since it only proves the server is really Aiven's, so it is included with the code. The password is not; it is kept in a .env file that is never committed.
 - The Milestone II dump was imported into Aiven unchanged, except that DEFINER=root@localhost was removed from the v_user view. Aiven has no root user and doesn't let my user create objects on another user's behalf, so the import would fail otherwise. Without it, the view belongs to my Aiven user.
 - After the import, every table had the same number of rows as its Milestone II CSV file (e.g. 8,574 properties, 4,551 developments, 31,649 amenity rows).
 
@@ -33,11 +33,11 @@ DEFINITIONS USED IN THE ANALYTICS PAGES
 
 The spec uses some terms without defining them. These are the definitions I used:
 - Price = down_payment + remaining_amount ("Cash required now" + "Remaining with developer"), as stated in my Milestone II assumptions.
-- Price per m2 = price / area_sqm, also as stated in Milestone II. Every listing has an area, so none are left out.
+- Price per m2 = price / area_sqm, also as stated in Milestone II. Every listing has an area so that none are left out.
 - Resale amount = the total price of all the listings counted.
 - Gain over market value = gain_amount, the site's own "Your gain vs. current market price". I checked that it equals market price - price - the buyer's 1.25% fee, so it doesn't need to be recalculated.
-- Discount over market price = (market_price - price) / market_price, as a percentage. E.g. a unit worth 10M on the market that is offered for 8M has a 20% discount. A percentage lets cheap and expensive units be compared fairly.
-- Age of contract year = the current year - contract_year. E.g. a contract from 2022 is 4 years old in 2026.
+- Discount over market price = (market_price - price) / market_price, as a percentage, e.g. a unit worth 10M on the market that is offered for 8M has a 20% discount. A percentage lets cheap and expensive units be compared fairly.
+- Age of contract year = the current year - contract_year, e.g. a contract from 2022 is 4 years old in 2026.
 - Installment price = installment_amount (the amount of each installment).
 
 Ranking projects by gain
@@ -62,7 +62,7 @@ Merging the spellings of the top developers
 - I merged the spellings of the 18 developers that end up near the top: Talaat Moustafa Group, Palm Hills Developments, Mountain View, Madinet Masr, Tatweer Misr, Hyde Park Developments, Al Ahly Sabbour, Ora Developers, Orascom Development, City Edge Developments, Al Marasem, IL Cazar Developments, Misr Italia Properties, Amer Group, Hassan Allam Properties, SODIC, Taj Misr and PRE Developments. Each one is stored under its usual English name.
 - A spelling was only merged when it clearly is that developer: any spelling or language, with or without words like "شركة" or "Developments", or with one of its projects or its owner's name added.
 - These were left out on purpose:
-  - different companies with similar names (Orascom Development is not Ora Developers, Arkan Palm and Palmier are not Palm Hills, Mountain Valley is not Mountain View)
+  - different companies with similar names (Orascom Development and Ora Developers, Arkan Palm and Palmier are not Palm Hills, Mountain Valley is not Mountain View)
   - subsidiaries (e.g. "one of Talaat Moustafa's companies") and joint ventures (e.g. "Al Ahly Sabbour and Founders")
   - names on their own that could be more than one company ("صبور", "عامر")
 - Smaller developers were not merged, so they may still appear under more than one spelling.
