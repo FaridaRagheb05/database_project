@@ -74,8 +74,14 @@ After the import, every table had the same number of rows as its Milestone II CS
 | Register a user | Register a user | Inserts into `app_user` and one row per focus area into `user_focuses_location`, as one transaction (all saved or none). The age is read back from the `v_user` view |
 | Add a new user review on a project | Add a review | Checks the email is registered, then inserts into `review` |
 | View existing reviews of a project | View reviews of a project | Shows the project's developer and area, its review count and average rating (`COUNT` / `AVG` with a `LEFT JOIN`), and its reviews newest first |
+| Top 10 projects with highest resale inventory, resale amount and gain over market value by property type | Top 10 projects by property type | Pick a type to get three top-10 lists of projects (`GROUP BY` development): most listings (`COUNT`), highest total price (`SUM`) and highest average gain per listing (`AVG(gain_amount)`) |
+| Location of a development, with avg price / m² and number of listings for each unit type | Development details | Shows the project's area and developer, then `COUNT` and `AVG(price / area_sqm)` grouped by unit type |
+| All properties in an area, with avg price / m² for each unit type | Properties in an area | The same per-type summary for the area, then every listing in it, cheapest first |
+| Properties in an area in a price range with a set of amenities | Search by area, price and amenities | Filters by area and `price BETWEEN min AND max`. For amenities, a subquery on `property_amenity` with `GROUP BY listing_ref HAVING COUNT(*) = <number picked>` keeps only listings that have all of them |
 
 The other features are added in the next commits.
+
+Price is `down_payment + remaining_amount` and price / m² is price ÷ `area_sqm` (see `ASSUMPTIONS.txt`). Listing tables link to each listing's page on AqarExit.
 
 ## Assumptions
 

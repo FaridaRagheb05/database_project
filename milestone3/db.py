@@ -8,6 +8,7 @@
 # Not run directly -> app.py imports it
 
 import os # to read the DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_SSL_CA settings
+from decimal import Decimal # the type MySQL's DECIMAL columns come back as
 from pathlib import Path # for building file paths
 
 import mysql.connector
@@ -113,6 +114,13 @@ def run_query(sql, params=()):
         cursor.execute(sql, params)
         rows = cursor.fetchall()
         cursor.close()
+        # Prices, areas and averages come back as Python Decimals (from my DECIMAL columns and from AVG / SUM)
+        # I turn them into normal numbers (floats) because Streamlit's tables can only sort and format those
+        # -> a float is precise enough for showing prices, the exact values stay as DECIMAL in the database
+        for row in rows:
+            for column, value in row.items():
+                if isinstance(value, Decimal):
+                    row[column] = float(value)
         return rows
     finally:
         # close() on a pooled connection gives it back to the pool instead of disconnecting
