@@ -25,6 +25,7 @@ source .env
 | `db.py` | Connects to MySQL and runs queries for the app |
 | `ca.pem` | Aiven's CA certificate, used to verify the encrypted connection |
 | `requirements.txt` | The Python libraries the app needs |
+| `ASSUMPTIONS.txt` | Every assumption made in this milestone (deliverable) |
 
 ## Connecting to the database
 
@@ -79,9 +80,4 @@ The other features are added in the next commits.
 
 ## Assumptions
 
-- There is no login or password, because the spec only asks for users to register with their email. To add a review, a user types the email they registered with.
-- At least one area of focus is required when registering, since the spec lists it as part of registration.
-- Age is not typed in. It is worked out from the birthdate by the `v_user` view (as in Milestone I), so it never goes out of date.
-- The rules are enforced by the database, not the app: the `UNIQUE`, `CHECK` and `FOREIGN KEY` constraints from Milestone I reject a taken email or username, an invalid email, a rating outside 1–10, a second review of the same project, or a review from an unregistered email. The app catches these MySQL errors and shows a friendly message.
-- Reviews show the reviewer's username, not their email, so other visitors can't see people's emails.
-- An empty review text is stored as `NULL`, like the sample reviews without text from Milestone II.
+All the assumptions for this milestone (hosting, users and reviews, and how terms like price per m² and gain over market value are calculated) are in [`ASSUMPTIONS.txt`](ASSUMPTIONS.txt).

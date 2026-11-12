@@ -1,0 +1,45 @@
+ASSUMPTIONS FOR MILESTONE III
+
+
+THE APPLICATION
+
+- The application is a web app built with Streamlit (Python). It runs as a website and talks only to the database hosted on Aiven, never to localhost. My TA confirmed that a website acting as an interface to a cloud-hosted database counts as a web-based app.
+- The app has a sidebar menu with one page for each of the 10 features in the spec, in the same order as the spec.
+
+
+HOSTING THE DATABASE
+
+- The database is hosted on a free Aiven MySQL 8.4 server. I chose Aiven over db4free.net (the example in the spec) because it is more reliable.
+- Aiven only accepts encrypted connections. The app checks the server against Aiven's CA certificate (ca.pem). The certificate is public, since it only proves the server is really Aiven's, so it is included with the code. The password is not: it is kept in a .env file that is never committed.
+- The Milestone II dump was imported into Aiven unchanged, except that DEFINER=root@localhost was removed from the v_user view. Aiven has no root user and doesn't let my user create objects on another user's behalf, so the import would fail otherwise. Without it, the view belongs to my Aiven user.
+- After the import, every table had the same number of rows as its Milestone II CSV file (e.g. 8,574 properties, 4,551 developments, 31,649 amenity rows).
+
+
+USERS AND REVIEWS
+
+- There is no login or password, because the spec only asks for users to register with their email. To add a review, a user types the email they registered with.
+- At least one area of focus is required when registering, since the spec lists it as part of registration.
+- Age is not typed in. It is worked out from the birthdate by the v_user view (as in Milestone I), so it never goes out of date.
+- Registering saves the user and their areas of focus as one transaction, so either all of it is saved or none of it is.
+- The rules are enforced by the database, not the app. The UNIQUE, CHECK and FOREIGN KEY constraints from Milestone I reject a taken email or username, an invalid email, a rating outside 1-10, a second review of the same project, or a review from an unregistered email. The app catches these MySQL errors and shows a friendly message instead.
+- Reviews show the reviewer's username, not their email, so other visitors can't see people's emails.
+- An empty review text is stored as NULL, like the sample reviews without text from Milestone II.
+
+
+DEFINITIONS USED IN THE ANALYTICS PAGES
+
+The spec uses some terms without defining them. These are the definitions I used:
+- Price = down_payment + remaining_amount ("Cash required now" + "Remaining with developer"), as stated in my Milestone II assumptions.
+- Price per m2 = price / area_sqm, also as stated in Milestone II. Every listing has an area, so none are left out.
+- Resale amount = the total price of all the listings counted.
+- Gain over market value = gain_amount, the site's own "Your gain vs. current market price". I checked that it equals market price - price - the buyer's 1.25% fee, so it doesn't need to be recalculated.
+- Discount over market price = (market_price - price) / market_price, as a percentage. E.g. a unit worth 10M on the market that is offered for 8M has a 20% discount. A percentage lets cheap and expensive units be compared fairly.
+- Age of contract year = the current year - contract_year. E.g. a contract from 2022 is 4 years old in 2026.
+- Installment price = installment_amount (the amount of each installment).
+
+Ranking projects by gain
+- For "top 10 projects with the highest gain over market value", projects are ranked by their average gain per listing, not the total gain of all their listings. A total would mostly repeat the "highest resale inventory" ranking, because a project with many listings adds up a large total even if each unit is a weak deal. The average shows which projects actually give buyers the best gain.
+
+Missing values
+- 298 listings have no market price, so they have no gain or discount. 707 listings have no contract year. MySQL's AVG() skips NULL values, so these listings are left out of those averages only, and still count everywhere else.
+- Each page shows the number of listings next to its averages, so it's clear what each average is based on.
