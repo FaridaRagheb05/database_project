@@ -49,7 +49,23 @@ Ranking projects
 Top 5 developers
 - A developer's listings are the listings in all of their development projects.
 - Projects with no developer listed are left out of this page.
-- Developers are counted by name as stored in Milestone II, so a developer whose name was written in both English and Arabic on the site (e.g. "Palm hills" and "بالم هيلز") is counted as two developers. This follows the Milestone II assumption that English and Arabic spellings can't be matched automatically.
+- Developers are counted by their name in the developer table. The top developers' different spellings were merged first (see "Changes to the Milestone II data" below).
+
+
+CHANGES TO THE MILESTONE II DATA
+
+Merging the spellings of the top developers
+- Sellers type the developer name themselves, so the same developer appears under many spellings: English and Arabic ("Palm hills" / "بالم هيلز"), typos ("Palm hilles", "بالم هيبز"), and with extra words ("شركة بالم هيلز", "Palm Hills Development (PHD)"). Milestone II only merged names that differ in case, spacing, accents or Arabic letter forms, so the Top 5 developers page showed Palm Hills and Mountain View twice each.
+- I merged the spellings of the 18 developers that end up near the top: Talaat Moustafa Group, Palm Hills Developments, Mountain View, Madinet Masr, Tatweer Misr, Hyde Park Developments, Al Ahly Sabbour, Ora Developers, Orascom Development, City Edge Developments, Al Marasem, IL Cazar Developments, Misr Italia Properties, Amer Group, Hassan Allam Properties, SODIC, Taj Misr and PRE Developments. Each one is stored under its usual English name.
+- A spelling was only merged when it clearly is that developer: any spelling or language, with or without words like "شركة" or "Developments", or with one of its projects or its owner's name added.
+- These were left out on purpose:
+  - different companies with similar names (Orascom Development is not Ora Developers, Arkan Palm and Palmier are not Palm Hills, Mountain Valley is not Mountain View)
+  - subsidiaries (e.g. "one of Talaat Moustafa's companies") and joint ventures (e.g. "Al Ahly Sabbour and Founders")
+  - names on their own that could be more than one company ("صبور", "عامر")
+- Smaller developers were not merged, so they may still appear under more than one spelling.
+- The merge was done by merge_developers.py, which lists every spelling that was merged. It runs as one transaction, so either everything is merged or nothing is. Before saving, it was run as a dry run that showed the result and then undid it.
+- Result: the developer table went from 2,618 to 2,412 rows (206 duplicate spellings removed), and 1,681 developments now belong to these 18 developers. No developments, properties or other rows were added or removed. The top 5 changed from طلعت مصطفى, بالم هيلز, Palm hills, Mountain View, ماونتن فيو to Talaat Moustafa Group (870 listings), Palm Hills Developments (837), Mountain View (528), Hyde Park Developments (316) and Madinet Masr (291).
+- Because of this, the developer and development tables on the server no longer match the Milestone II CSV files exactly. The Milestone III database dump has the merged data.
 
 Properties by area, type and contract year
 - Each of the three filters is optional. An empty filter means "any", and with no filters every listing is shown.

@@ -22,6 +22,7 @@ python3 -m venv .venv
 |---|---|
 | `app.py` | The web app: a sidebar menu with one page per feature |
 | `db.py` | Connects to MySQL and runs queries for the app |
+| `merge_developers.py` | One-time fix that merged the different spellings of the top developers (see `ASSUMPTIONS.txt`). Runs as a dry run unless given `--apply` |
 | `ca.pem` | Aiven's CA certificate, used to verify the encrypted connection |
 | `requirements.txt` | The Python libraries the app needs |
 | `ASSUMPTIONS.txt` | Every assumption made in this milestone (deliverable) |
