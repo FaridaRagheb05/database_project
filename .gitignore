@@ -5,3 +5,4 @@ milestone2/raw/
 milestone2/crawl.log
 .env
 .streamlit/secrets.toml
+grader.env

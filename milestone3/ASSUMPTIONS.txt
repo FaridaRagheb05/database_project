@@ -5,7 +5,9 @@ THE APPLICATION
 
 - The application is a web app built with Streamlit (Python). It runs as a website and talks only to the database hosted on Aiven, never to localhost.
 - The app has a sidebar menu with one page for each of the 10 features in the spec, in the same order as the spec.
-- The app is deployed on Streamlit Community Cloud (https://resale-properties.streamlit.app/), so the website itself is also hosted online and anyone can use it without installing anything. This counts as the "executable": the source code is in the repository and the running app is at that link. It can also be run locally with "streamlit run milestone3/app.py".
+- The app is deployed on Streamlit Community Cloud (https://resale-properties.streamlit.app/), so the website itself is also hosted online and anyone can use it without installing anything. This counts as the "executable": the source code is in the repository and the running app is at that link.
+- In case the app needs to be run on another computer, there are also double-click launchers (run_app.command for Mac and run_app.bat for Windows). They install the libraries the first time, then start the app locally. They need Python 3.11 or newer, because mysql-connector-python 26.10 doesn't support older versions.
+- Running the app locally needs the database settings in a .env file. Instead of sharing my main Aiven user (avnadmin), which has full control of the database, I created a "grader" user that can only read the data and add users, focus areas and reviews. It can't change or delete anything, so sharing its password can't damage the data. Its .env file is included with the submission, not in the repository.
 - The GitHub repository stays private. Only Streamlit has read access to it, to run the app. The app itself is public, so visitors can use the website but can't see the code.
 - The database password is stored in Streamlit's Secrets for the deployed app and in a .env file for running locally. It is never in the code or the repository.
 

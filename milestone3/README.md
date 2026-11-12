@@ -8,6 +8,15 @@ Libraries: Streamlit (web interface), `mysql.connector` (talking to MySQL).
 
 ## How to run
 
+The easiest way is the live app above. To run it on your own computer, you need Python 3.11 or newer and a `.env` file with the database settings in the project folder (see "Hosting on Aiven"). Then double-click the launcher:
+
+- **Mac:** `milestone3/run_app.command` (if macOS blocks it the first time, right-click it, then Open, then Open)
+- **Windows:** `milestone3/run_app.bat`
+
+The first time, the launcher creates `.venv` and installs the libraries (a minute or two). After that it starts the app straight away, and the app opens in the browser at http://localhost:8501. Closing the launcher's window stops the app.
+
+Or run the same steps by hand:
+
 ```bash
 # one-time setup (from the project folder)
 python3 -m venv .venv
@@ -24,6 +33,7 @@ python3 -m venv .venv
 |---|---|
 | `app.py` | The web app: a sidebar menu with one page per feature |
 | `db.py` | Connects to MySQL and runs queries for the app |
+| `run_app.command` / `run_app.bat` | Double-click launchers for Mac / Windows that install the libraries the first time, then start the app |
 | `merge_developers.py` | One-time fix that merged the different spellings of the top developers (see `ASSUMPTIONS.txt`). Runs as a dry run unless given `--apply` |
 | `ca.pem` | Aiven's CA certificate, used to verify the encrypted connection |
 | `requirements.txt` | The Python libraries the app needs |
@@ -70,6 +80,20 @@ sed -E 's/DEFINER=`[^`]+`@`[^`]+`//' milestone2/properties_dump.sql | \
 `sed` removes `DEFINER=root@localhost` from the `v_user` view. mysqldump records that the view was created by `root@localhost`, but Aiven has no `root` user and does not let `avnadmin` create objects on another user's behalf, so the import would fail. Without it, the view belongs to `avnadmin`. The dump file itself is left unchanged.
 
 After the import, every table had the same number of rows as its Milestone II CSV (e.g. 8,574 properties, 4,551 developments, 31,649 amenity rows).
+
+### The `grader` user
+
+To let someone run the app locally without the `avnadmin` password (which has full control of the database), there is a second MySQL user with only the permissions the app needs:
+
+```sql
+CREATE USER 'grader'@'%' IDENTIFIED BY '<password>';
+GRANT SELECT ON properties.* TO 'grader'@'%';
+GRANT INSERT ON properties.app_user TO 'grader'@'%';
+GRANT INSERT ON properties.user_focuses_location TO 'grader'@'%';
+GRANT INSERT ON properties.review TO 'grader'@'%';
+```
+
+It can read every table and register users and add reviews, but it can't change or delete anything. Its `.env` file is included with the submission, not in the repository. When tested, every page worked and `DELETE`, `UPDATE` and `DROP` were all refused (MySQL error 1142).
 
 ## Deployment
 
