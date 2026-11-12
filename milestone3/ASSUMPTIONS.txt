@@ -43,7 +43,21 @@ Ranking projects by gain
 Ranking projects
 - When two projects tie in a top 10 list, they are ordered by project name, so the list is always in the same order.
 - A project is identified by its development_id, not its name, since the same project name can exist in two areas (as in Milestone I). Each row shows the project's area to tell them apart.
-- Because the gain list uses an average, a project with a single listing can reach the top if that one listing has a large gain. The number of listings is shown next to each average so this is visible.
+- Because the gain list uses an average, a project with very few listings can reach the top just because one of its listings has a large gain (or a typo in its market price). With no minimum, 9 of the top 10 apartment projects had a single listing, so the list was really ranking single units, not projects. So the gain list only ranks projects with at least 3 listings by default. 3 is the smallest number where one unusual listing can't decide the average on its own (with 2, a project with one 1M gain and one 41.5M gain averaged 21M). The minimum is a control on the page, so it can be changed (e.g. set to 1 to see every project). The number of listings is shown next to each average.
+- The minimum only applies to the gain list. The inventory and resale amount lists are totals, so they don't have this problem.
+
+Top 5 developers
+- A developer's listings are the listings in all of their development projects.
+- Projects with no developer listed are left out of this page.
+- Developers are counted by name as stored in Milestone II, so a developer whose name was written in both English and Arabic on the site (e.g. "Palm hills" and "بالم هيلز") is counted as two developers. This follows the Milestone II assumption that English and Arabic spellings can't be matched automatically.
+
+Properties by area, type and contract year
+- Each of the three filters is optional. An empty filter means "any", and with no filters every listing is shown.
+- Listings with no contract year only appear when no contract year is picked.
+
+Averages by area and project
+- There is one row per area and development project.
+- An area filter is optional. With no area picked, every area and project is shown.
 
 Searching by price and amenities
 - The price range includes both ends (a listing at exactly the maximum price is included).

@@ -396,6 +396,14 @@ def page_top_projects():
     # -> a total would mostly repeat the inventory list above (see ASSUMPTIONS.txt)
     # Listings with no market price have no gain, so they are left out here
     st.subheader("Highest gain over market value (average per listing)")
+
+    # Only rank projects with at least this many listings (3 to start with)
+    # -> with no minimum, 9 of the top 10 apartment projects had a single listing, so the list was really ranking single units
+    # and one unusual unit (or a typo in its market price) could put a project at the top
+    # It's a control and not a fixed number so the effect can be shown by setting it to 1
+    min_listings = st.number_input("Minimum listings per project", min_value=1, value=3, step=1)
+
+    # HAVING filters the groups after GROUP BY (WHERE can't, because COUNT(*) only exists after grouping)
     show_table(run_query("""
         SELECT d.project_name AS `Project`, d.area_name AS `Area`, d.developer_name AS `Developer`,
                ROUND(AVG(p.gain_amount)) AS `Avg gain (EGP)`,
@@ -404,9 +412,10 @@ def page_top_projects():
         JOIN development d ON d.development_id = p.development_id
         WHERE p.type = %s AND p.gain_amount IS NOT NULL
         GROUP BY d.development_id
+        HAVING COUNT(*) >= %s
         ORDER BY `Avg gain (EGP)` DESC, d.project_name
         LIMIT 10
-    """, (property_type,)))
+    """, (property_type, min_listings)))
 
 
 # The location of a given development, with the average price per m2 and number of listings for each unit type
@@ -523,11 +532,115 @@ def page_search():
     show_table(rows)
 
 
-# Placeholder for the features that aren't built yet
+# Top 5 developers by the number of resale listings they have,
+# with their average price per m2, average down payment and average gain over market value
 
-def page_coming_soon():
+def page_top_developers():
 
-    st.info("Coming soon")
+    st.header("Top 5 developers")
+
+    # A developer's listings are the listings in all of their development projects
+    # Projects with no developer listed are left out (developer_name is NULL for them)
+    # GROUP BY developer_name works because it's the primary key of my developer table, so each name is one developer
+    # AVG skips NULLs, so listings with no market price are left out of the average gain only
+    show_table(run_query(f"""
+        SELECT d.developer_name AS `Developer`,
+               COUNT(*) AS `Listings`,
+               ROUND(AVG({PRICE_PER_SQM})) AS `Avg price / m² (EGP)`,
+               ROUND(AVG(p.down_payment)) AS `Avg down payment (EGP)`,
+               ROUND(AVG(p.gain_amount)) AS `Avg gain (EGP)`
+        FROM property p
+        JOIN development d ON d.development_id = p.development_id
+        WHERE d.developer_name IS NOT NULL
+        GROUP BY d.developer_name
+        ORDER BY `Listings` DESC, d.developer_name
+        LIMIT 5
+    """))
+
+
+# All the properties by area, property type and contract year
+# Each filter is optional -> leaving one empty means "any"
+
+def page_by_area_type_year():
+
+    st.header("Properties by area, type and contract year")
+
+    areas = load_listing_areas()
+    types = load_types()
+    # Only the years that appear in the data, newest first
+    years = [row["contract_year"] for row in
+             run_query("SELECT DISTINCT contract_year FROM property WHERE contract_year IS NOT NULL ORDER BY contract_year DESC")]
+
+    area_col, type_col, year_col = st.columns(3)
+    area = area_col.selectbox("Area", list(areas), index=None, placeholder="Any area")
+    property_type = type_col.selectbox("Property type", list(types), index=None, placeholder="Any type")
+    year = year_col.selectbox("Contract year", years, index=None, placeholder="Any year")
+
+    # Build the WHERE part from the filters that were picked
+    # Each condition still uses %s for the value, I only choose which conditions to include
+    conditions = []
+    params = []
+    if area is not None:
+        conditions.append("p.area_name = %s")
+        params.append(area)
+    if property_type is not None:
+        conditions.append("p.type = %s")
+        params.append(property_type)
+    if year is not None:
+        conditions.append("p.contract_year = %s")
+        params.append(year)
+
+    # With no filters there's no WHERE at all, so every listing is shown
+    where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+    rows = run_query(f"""
+        SELECT {LISTING_COLUMNS}
+        {LISTINGS_FROM}
+        {where}
+        ORDER BY p.area_name, p.type, p.contract_year DESC, `Price (EGP)`
+    """, params)
+    st.subheader(f"{len(rows):,} properties found")
+    show_table(rows)
+
+
+# The average installment, average down payment, number of properties, average discount over market price,
+# average age of the contract year and average market price, by area and development project
+
+def page_area_project_averages():
+
+    st.header("Averages by area and development project")
+
+    # Optional filter so one area's projects can be looked at on their own
+    areas = load_listing_areas()
+    area = st.selectbox("Area", list(areas), index=None, placeholder="All areas")
+
+    where = "WHERE p.area_name = %s" if area is not None else ""
+    params = (area,) if area is not None else ()
+
+    # One row per area + project
+    # Discount over market price = (market price - price) / market price, as a % (see ASSUMPTIONS.txt)
+    #   NULLIF(p.market_price, 0) turns a market price of 0 into NULL so it can never divide by zero
+    # Age of contract year = this year - contract_year
+    #   YEAR(CURDATE()) is worked out by MySQL, so the ages stay correct next year too
+    # AVG skips NULLs -> listings with no market price or no contract year are left out of those averages only
+    # GROUP BY includes d.project_name as well as d.development_id
+    # -> with a LEFT JOIN MySQL can't tell that project_name depends on development_id, and Aiven runs with ONLY_FULL_GROUP_BY
+    rows = run_query(f"""
+        SELECT p.area_name AS `Area`,
+               d.project_name AS `Project`,
+               COUNT(*) AS `Properties`,
+               ROUND(AVG(p.installment_amount)) AS `Avg installment (EGP)`,
+               ROUND(AVG(p.down_payment)) AS `Avg down payment (EGP)`,
+               ROUND(AVG((p.market_price - {PRICE}) / NULLIF(p.market_price, 0) * 100), 1) AS `Avg discount over market (%)`,
+               ROUND(AVG(YEAR(CURDATE()) - p.contract_year), 1) AS `Avg contract age (years)`,
+               ROUND(AVG(p.market_price)) AS `Avg market price (EGP)`
+        {LISTINGS_FROM}
+        {where}
+        GROUP BY p.area_name, d.development_id, d.project_name
+        ORDER BY p.area_name, `Properties` DESC, d.project_name
+    """, params)
+    st.subheader(f"{len(rows):,} area and project combinations")
+    show_table(rows)
 
 
 # The sidebar menu: one entry per feature in the spec, in the same order
@@ -539,9 +652,9 @@ PAGES = {
     "Development details": page_development,
     "Properties in an area": page_area,
     "Search by area, price and amenities": page_search,
-    "Top 5 developers": page_coming_soon,
-    "Properties by area, type and contract year": page_coming_soon,
-    "Area and project averages": page_coming_soon,
+    "Top 5 developers": page_top_developers,
+    "Properties by area, type and contract year": page_by_area_type_year,
+    "Averages by area and project": page_area_project_averages,
 }
 
 st.sidebar.title("Resale Properties")
