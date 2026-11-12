@@ -243,7 +243,7 @@ CREATE TABLE `review` (
   CONSTRAINT `fk_review_app_user` FOREIGN KEY (`email`) REFERENCES `app_user` (`email`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_review_development` FOREIGN KEY (`development_id`) REFERENCES `development` (`development_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `chk_review_rating` CHECK ((`rating` between 1 and 10))
-) ENGINE=InnoDB AUTO_INCREMENT=183 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=184 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -340,4 +340,4 @@ USE `properties`;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-11-12 13:57:03
+-- Dump completed on 2026-11-12 20:31:40
