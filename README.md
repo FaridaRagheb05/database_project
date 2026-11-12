@@ -2,6 +2,8 @@
 
 CSCE 2501 Fundamentals of Database Systems project, Fall 2026. A MySQL database of the resale properties listed on [AqarExit](https://aqarexit.com/en/opportunities), with a web app for searching and analysing the resale market.
 
+**Live app:** https://resale-properties.streamlit.app/ (the database behind it is hosted on Aiven)
+
 ## Milestones
 
 | Milestone | What it is | Deliverables |

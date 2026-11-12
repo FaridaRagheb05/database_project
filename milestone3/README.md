@@ -2,6 +2,8 @@
 
 A Streamlit web app that works as an interface to the `properties` database, which is hosted on a remote MySQL server (Aiven), not on localhost.
 
+**Live app:** https://resale-properties.streamlit.app/
+
 Libraries: Streamlit (web interface), `mysql.connector` (talking to MySQL).
 
 ## How to run
@@ -68,6 +70,29 @@ sed -E 's/DEFINER=`[^`]+`@`[^`]+`//' milestone2/properties_dump.sql | \
 `sed` removes `DEFINER=root@localhost` from the `v_user` view. mysqldump records that the view was created by `root@localhost`, but Aiven has no `root` user and does not let `avnadmin` create objects on another user's behalf, so the import would fail. Without it, the view belongs to `avnadmin`. The dump file itself is left unchanged.
 
 After the import, every table had the same number of rows as its Milestone II CSV (e.g. 8,574 properties, 4,551 developments, 31,649 amenity rows).
+
+## Deployment
+
+The app is deployed on Streamlit Community Cloud at https://resale-properties.streamlit.app/, so it can be used from any browser without installing anything. Both the website and the database are in the cloud.
+
+| Setting | Value |
+|---|---|
+| Repository / branch | `FaridaRagheb05/database_project` / `main` |
+| Main file path | `milestone3/app.py` |
+| Python version | 3.11 |
+| Libraries | Installed from `milestone3/requirements.txt` |
+
+The five `DB_` settings are entered in the app's **Secrets** on Streamlit Cloud, not in the repository:
+
+```toml
+DB_HOST = "<host from the Aiven Overview page>"
+DB_PORT = "<port>"
+DB_USER = "avnadmin"
+DB_PASSWORD = "<password>"
+DB_SSL_CA = "milestone3/ca.pem"
+```
+
+Streamlit Cloud passes these to the app as environment variables, which `db.py` reads in the same way as the `.env` file locally. Every push to `main` redeploys the app automatically.
 
 ## Database dump
 

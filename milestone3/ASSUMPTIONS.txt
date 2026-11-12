@@ -5,6 +5,9 @@ THE APPLICATION
 
 - The application is a web app built with Streamlit (Python). It runs as a website and talks only to the database hosted on Aiven, never to localhost. My TA confirmed that a website acting as an interface to a cloud-hosted database counts as a web-based app.
 - The app has a sidebar menu with one page for each of the 10 features in the spec, in the same order as the spec.
+- The app is deployed on Streamlit Community Cloud (https://resale-properties.streamlit.app/), so the website itself is also hosted online and anyone can use it without installing anything. This counts as the "executable": the source code is in the repository and the running app is at that link. It can also be run locally with "streamlit run milestone3/app.py".
+- The GitHub repository stays private. Only Streamlit has read access to it, to run the app. The app itself is public, so visitors can use the website but can't see the code.
+- The database password is stored in Streamlit's Secrets for the deployed app and in a .env file for running locally. It is never in the code or the repository.
 
 
 HOSTING THE DATABASE
